@@ -190,7 +190,11 @@ class Puzzle:
 class ImagePuzzleApp:
     def __init__(self, root):
         self.root = root
+<<<<<<< Updated upstream
         self.root.title("Flipping Out!")
+=======
+        self.root.title("Flipping out!")
+>>>>>>> Stashed changes
 
         self.grid_size_var = tk.IntVar(value=5)
         self.puzzle = None
