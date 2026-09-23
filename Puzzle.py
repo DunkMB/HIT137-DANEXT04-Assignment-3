@@ -35,7 +35,7 @@ class ImagePuzzleApp:
     def _build_ui(self):
         control_frame = ttk.Frame(self.root, padding=10)
         control_frame.pack(fill=tk.X)
-
+# Image insert button
         ttk.Button(control_frame, text="Load Image", command=self.load_image).pack(side=tk.LEFT, padx=5)
 
         ttk.Label(control_frame, text="Grid Size:").pack(side=tk.LEFT, padx=5)
@@ -68,10 +68,10 @@ class ImagePuzzleApp:
 
         final_dim = (target_dim // grid_size) * grid_size
         resized_img = cv2.resize(cropped, (final_dim, final_dim))
-# This line gets added to the whole code in its proper place
-        self.puzzle = Puzzle(resized_img, grid_size)
+# This line gets added to the whole code in its proper place. Activate later.
+        # self.puzzle = Puzzle(resized_img, grid_size)
 
-# Image insert button
+
 
 
 
