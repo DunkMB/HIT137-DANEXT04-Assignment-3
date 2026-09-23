@@ -74,7 +74,7 @@ class ImagePuzzleApp:
         self.hints_used = 0
         self.active_hint = None
         self.is_solved = False
-
+# Add these in later
         # self.hint_button.config(state=tk.NORMAL, text=f"Hint ({self.max_hints} left)")
         # self.solve_button.config(state=tk.NORMAL)
 
