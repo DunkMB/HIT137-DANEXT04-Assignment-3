@@ -30,7 +30,6 @@ from abc import ABC, abstractmethod
 
 
 #Duncan section
-# Load the image and size/crop it.
 class ImagePuzzleApp:
     def _build_ui(self):
         control_frame = ttk.Frame(self.root, padding=10)
@@ -41,7 +40,7 @@ class ImagePuzzleApp:
         ttk.Label(control_frame, text="Grid Size:").pack(side=tk.LEFT, padx=5)
         grid_combobox = ttk.Combobox(control_frame, textvariable=self.grid_size_var, values=[3, 4, 5], state="readonly", width=5)
         grid_combobox.pack(side=tk.LEFT, padx=5)
-
+# Load the image and size/crop it.
     def load_image(self):
         file_path = filedialog.askopenfilename(
             filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp")]
@@ -68,6 +67,19 @@ class ImagePuzzleApp:
 
         final_dim = (target_dim // grid_size) * grid_size
         resized_img = cv2.resize(cropped, (final_dim, final_dim))
+        self.puzzle = Puzzle(resized_img, grid_size)
+        self.puzzle.scramble()
+        self.selected_tile_pos = None
+        self.moves_count = 0
+        self.hints_used = 0
+        self.active_hint = None
+        self.is_solved = False
+
+        # self.hint_button.config(state=tk.NORMAL, text=f"Hint ({self.max_hints} left)")
+        # self.solve_button.config(state=tk.NORMAL)
+
+        self.update_display()
+
 # This line gets added to the whole code in its proper place. Activate later.
         # self.puzzle = Puzzle(resized_img, grid_size)
 
