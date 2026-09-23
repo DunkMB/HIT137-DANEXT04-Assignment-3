@@ -31,6 +31,17 @@ from abc import ABC, abstractmethod
 
 #Duncan section
 # Load the image and size/crop it.
+class ImagePuzzleApp:
+    def _build_ui(self):
+        control_frame = ttk.Frame(self.root, padding=10)
+        control_frame.pack(fill=tk.X)
+
+        ttk.Button(control_frame, text="Load Image", command=self.load_image).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(control_frame, text="Grid Size:").pack(side=tk.LEFT, padx=5)
+        grid_combobox = ttk.Combobox(control_frame, textvariable=self.grid_size_var, values=[3, 4, 5], state="readonly", width=5)
+        grid_combobox.pack(side=tk.LEFT, padx=5)
+
     def load_image(self):
         file_path = filedialog.askopenfilename(
             filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp")]
@@ -59,6 +70,9 @@ from abc import ABC, abstractmethod
         resized_img = cv2.resize(cropped, (final_dim, final_dim))
 # This line gets added to the whole code in its proper place
         self.puzzle = Puzzle(resized_img, grid_size)
+
+# Image insert button
+
 
 
 #Jonathan section
