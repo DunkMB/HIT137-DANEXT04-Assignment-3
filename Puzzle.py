@@ -11,11 +11,14 @@ print(f"{'Jonathan Falkner':<20} {'s400817':>20}")
 print("_" * 50)
 print(" " * 50)
 print(" " * 50)
-print(" " * 50)
-print("_" * 50)
-print("Question 1")
-print("_" * 50)
 
+import cv2
+import numpy as np
+import random
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
+from PIL import Image, ImageTk
+from abc import ABC, abstractmethod
 
 #Amber section
 
@@ -27,7 +30,35 @@ print("_" * 50)
 
 
 #Duncan section
+# Load the image and size/crop it.
+    def load_image(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image Files", "*.jpg *.jpeg *.png *.bmp")]
+        )
+        if not file_path:
+            return
 
+        usr_img = cv2.imread(file_path)
+        if usr_img is None:
+            messagebox.showerror("Error", "Failed to load image file.")
+            return
+
+        target_dim = 400
+        grid_size = self.grid_size_var.get()
+
+        h, w, _ = usr_img.shape
+        min_dim = min(h, w)
+        crop_h = (min_dim // grid_size) * grid_size
+        crop_w = (min_dim // grid_size) * grid_size
+
+        start_y = (h - crop_h) // 2
+        start_x = (w - crop_w) // 2
+        cropped = usr_img[start_y:start_y + crop_h, start_x:start_x + crop_w]
+
+        final_dim = (target_dim // grid_size) * grid_size
+        resized_img = cv2.resize(cropped, (final_dim, final_dim))
+# This line gets added to the whole code in its proper place
+        self.puzzle = Puzzle(resized_img, grid_size)
 
 
 #Jonathan section

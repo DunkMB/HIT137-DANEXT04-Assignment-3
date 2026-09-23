@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 from abc import ABC, abstractmethod
-# cv2 lib of commands is huge!
+
 
 # ==========================================
 # 1. OOP: TRANSFORMATIONS (Polymorphism & Inheritance)
@@ -22,7 +22,6 @@ class Transformation(ABC):
 
 
 class SwapTransformation(Transformation):
-# Swap two tile locations in the puzzle.
     def __init__(self, pos1, pos2):
         self.pos1 = pos1  # (r1, c1)
         self.pos2 = pos2  # (r2, c2)
@@ -36,7 +35,6 @@ class SwapTransformation(Transformation):
 
 
 class RotateTransformation(Transformation):
-# Rotate tile by 90, 180, or 270 degrees clockwise.
     def __init__(self, pos, angle):
         self.pos = pos  # (r, c)
         self.angle = angle  # 90, 180, 270
@@ -51,7 +49,6 @@ class RotateTransformation(Transformation):
 
 
 class FlipTransformation(Transformation):
-# Flip tile horizontally or vertically.
     def __init__(self, pos, axis):
         self.pos = pos  # (r, c)
         self.axis = axis  # 'horizontal' or 'vertical'
@@ -80,14 +77,12 @@ class Tile:
         self.v_flipped = False
 
     def is_correct(self, current_pos):
-# Check if tile is in original position and orientation.
         return (self.original_pos == current_pos and 
                 self.rotation == 0 and 
                 not self.h_flipped and 
                 not self.v_flipped)
 
     def get_current_image(self):
-# Apply current rotations and flips.
         img = self.original_image.copy()
 
         if self.h_flipped:
@@ -106,7 +101,6 @@ class Tile:
 
 
 class Puzzle:
-# Manages the grid layout.
     def __init__(self, image, grid_size):
         self.grid_size = grid_size
         self.original_image = image
@@ -115,7 +109,7 @@ class Puzzle:
         self.tile_w = self.w // grid_size
 
         self.tiles = []
-        self.grid = []                                          # 2D list grid[r][c]
+        self.grid = []
         for r in range(grid_size):
             row = []
             for c in range(grid_size):
@@ -130,44 +124,48 @@ class Puzzle:
         self.transformations = []
 
     def scramble(self):
-# Scramble puzzle with random transformations until no tile is in its correct home position/orientation.
+        """Scrambles the puzzle ensuring NO tile starts in its home position/orientation."""
+        for r in range(self.grid_size):
+            for c in range(self.grid_size):
+                tile = self.tiles[r * self.grid_size + c]
+                tile.rotation = 0
+                tile.h_flipped = False
+                tile.v_flipped = False
+                self.grid[r][c] = tile
+
+        self.transformations = []
+
+        # Force a derangement (position shuffle with 0 home matches)
+        positions = [(r, c) for r in range(self.grid_size) for c in range(self.grid_size)]
+        shuffled = positions.copy()
+        
+        while any(p == s for p, s in zip(positions, shuffled)):
+            random.shuffle(shuffled)
+
+        new_grid = [[None] * self.grid_size for _ in range(self.grid_size)]
+        for orig, target in zip(positions, shuffled):
+            r_orig, c_orig = orig
+            r_target, c_target = target
+            new_grid[r_target][c_target] = self.grid[r_orig][c_orig]
+        self.grid = new_grid
+
+        # Apply random rotations and flips based on grid size
         count_map = {3: 6, 4: 12, 5: 20}
         num_transforms = count_map.get(self.grid_size, 6)
 
-        while True:
-        # Reset grid state to standard initial order.
-            for r in range(self.grid_size):
-                for c in range(self.grid_size):
-                    tile = self.tiles[r * self.grid_size + c]
-                    tile.rotation = 0
-                    tile.h_flipped = False
-                    tile.v_flipped = False
-                    self.grid[r][c] = tile
+        for _ in range(num_transforms):
+            t_type = random.choice(['rotate', 'flip'])
+            r, c = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
+            
+            if t_type == 'rotate':
+                angle = random.choice([90, 180, 270])
+                transform = RotateTransformation((r, c), angle)
+            else:
+                axis = random.choice(['horizontal', 'vertical'])
+                transform = FlipTransformation((r, c), axis)
 
-            self.transformations = []
-
-            # Apply random transformations.
-            for _ in range(num_transforms):
-                t_type = random.choice(['swap', 'rotate', 'flip'])
-                if t_type == 'swap':
-                    r1, r2 = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
-                    c1, c2 = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
-                    transform = SwapTransformation((r1, c1), (r2, c2))
-                elif t_type == 'rotate':
-                    r, c = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
-                    angle = random.choice([90, 180, 270])
-                    transform = RotateTransformation((r, c), angle)
-                elif t_type == 'flip':
-                    r, c = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
-                    axis = random.choice(['horizontal', 'vertical'])
-                    transform = FlipTransformation((r, c), axis)
-
-                transform.apply(self)
-                self.transformations.append(transform)
-
-            # Check if all tiles are currently incorrect
-            if self.get_incorrect_count() == self.grid_size * self.grid_size:
-                break
+            transform.apply(self)
+            self.transformations.append(transform)
 
     def is_solved(self):
         for r in range(self.grid_size):
@@ -194,7 +192,6 @@ class ImagePuzzleApp:
         self.root = root
         self.root.title("Flipping Out!")
 
-# Game state variables
         self.grid_size_var = tk.IntVar(value=5)
         self.puzzle = None
         self.selected_tile_pos = None
@@ -207,7 +204,6 @@ class ImagePuzzleApp:
         self._build_ui()
 
     def _build_ui(self):
-# Top Button Frame:
         control_frame = ttk.Frame(self.root, padding=10)
         control_frame.pack(fill=tk.X)
 
@@ -223,7 +219,6 @@ class ImagePuzzleApp:
         self.solve_button = ttk.Button(control_frame, text="Solve", command=self.solve_puzzle, state=tk.DISABLED)
         self.solve_button.pack(side=tk.LEFT, padx=5)
 
-# Info Frame:
         info_frame = ttk.Frame(self.root, padding=5)
         info_frame.pack(fill=tk.X)
 
@@ -233,18 +228,15 @@ class ImagePuzzleApp:
         self.incorrect_label = ttk.Label(info_frame, text="Tiles Incorrect: -", font=("Arial", 11, "bold"))
         self.incorrect_label.pack(side=tk.LEFT, padx=20)
 
-# Image Display Frame:
         self.display_frame = ttk.Frame(self.root, padding=10)
         self.display_frame.pack()
 
-# Canvas for Left (Original) and Right (Jumbled):
         self.left_canvas = tk.Canvas(self.display_frame, width=400, height=400, bg="gray")
         self.left_canvas.pack(side=tk.LEFT, padx=10)
 
         self.right_canvas = tk.Canvas(self.display_frame, width=400, height=400, bg="gray")
         self.right_canvas.pack(side=tk.RIGHT, padx=10)
 
-# Bindings for right canvas (Jumbled):
         self.right_canvas.bind("<Button-1>", self.on_left_click)
         self.right_canvas.bind("<Button-3>", self.on_right_click)
         self.right_canvas.bind("<Shift-Button-3>", self.on_shift_right_click)
@@ -261,7 +253,7 @@ class ImagePuzzleApp:
             messagebox.showerror("Error", "Failed to load image file.")
             return
 
-        target_dim = 500
+        target_dim = 400
         grid_size = self.grid_size_var.get()
 
         h, w, _ = raw_img.shape
@@ -297,7 +289,6 @@ class ImagePuzzleApp:
         tile_w = self.puzzle.tile_w
         tile_h = self.puzzle.tile_h
 
-        # 1. Left Canvas (Original Reference)
         orig_rgb = cv2.cvtColor(self.puzzle.original_image, cv2.COLOR_BGR2RGB)
         if self.active_hint:
             _, (hr, hc) = self.active_hint
@@ -310,7 +301,6 @@ class ImagePuzzleApp:
         self.left_canvas.config(width=self.puzzle.w, height=self.puzzle.h)
         self.left_canvas.create_image(0, 0, anchor=tk.NW, image=self.left_img_tk)
 
-        # 2. Right Canvas (Transformed Tile Board)
         canvas_bgr = np.zeros_like(self.puzzle.original_image)
 
         for r in range(grid_size):
@@ -372,7 +362,6 @@ class ImagePuzzleApp:
         self.update_display()
 
     def on_left_click(self, event):
-        """Left Click -> Select / Swap tiles."""
         if not self.puzzle or self.is_solved:
             return
 
@@ -392,7 +381,6 @@ class ImagePuzzleApp:
             self.register_move()
 
     def on_right_click(self, event):
-        """Right Click -> Rotate 90 Degrees Clockwise."""
         if not self.puzzle or self.is_solved:
             return
 
@@ -403,7 +391,6 @@ class ImagePuzzleApp:
             self.register_move()
 
     def on_shift_right_click(self, event):
-        """Shift + Right Click -> Flip Vertically."""
         if not self.puzzle or self.is_solved:
             return
 
@@ -461,9 +448,6 @@ class ImagePuzzleApp:
         self.update_display()
 
 
-# ==========================================
-# ENTRY POINT
-# ==========================================
 if __name__ == "__main__":
     root = tk.Tk()
     app = ImagePuzzleApp(root)
