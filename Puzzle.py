@@ -27,7 +27,7 @@ print("_" * 50)
 
 
 #Duncan section
-yadda yadda
+
 
 
 #Jonathan section
