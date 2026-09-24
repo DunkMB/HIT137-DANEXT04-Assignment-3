@@ -88,3 +88,31 @@ class ImagePuzzleApp:
 
 
 #Jonathan section
+
+import random
+
+def angle():
+    angle_options = {90: "90°", 180: "180°", 270: "270°"}
+    rotation_angle = random.choice(list(angle_options.keys()))
+    return rotation_angle
+
+def rotation_sequence(grid, angle):
+    (h,w) = grid.shape[:2]
+    center = (w // 2, h // 2)
+    M =cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(grid, M, (w,h))
+    return rotated
+
+def flip_sequence(grid):
+    flip_options = [1, 0]
+    flip = random.choice(flip_options)
+    flipped = cv2.flip(grid, flip)
+    return flipped
+
+def swap_sequence(grid, pos1, pos2):
+    grid[pos1], grid[pos2] = grid[pos2], grid[pos1]
+    return grid
+
+cv2.imwrite("rotated_image.jpg", rotation_sequence(grid, angle()))
+cv2.imwrite("flipped_image.jpg", flip_sequence(grid))
+cv2.imwrite("swapped_image.jpg", swap_sequence(grid, (0, 0), (1, 1)))
