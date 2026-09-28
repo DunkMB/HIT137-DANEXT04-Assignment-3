@@ -31,9 +31,8 @@ def handle_left_click(self, event):
         return
 
 #Map coordinates to grid position
-
-    c = event.x // self.tile w
-    r = event.y // self.tile h
+    c = event.x // self.tile_width
+    r = event.y // self.tile_height
     if r>=self.grid_size or c>=self.grid_size:
         return
 
@@ -51,8 +50,27 @@ def handle_left_click(self, event):
     else:
         sr, sc = self.selected_tile_pos
     if (sr, sc) == (r, c):
+
+#Deselect tile if same tile clicked again
         self.selected_tile_pos = None
         self.render_displays()
+    else:
+
+#Different tile chosen, swap
+        self.grid[sr][sc], self.grid[r][c] = self.grid[r][c], self.grid[sr][sc]
+        self.selected_tile_pos = None
+        self.register_move()
+
+def handle_right_click(self, event):
+    if self.original_cv_image is None or self.is_solved:
+        return
+
+    c = event.x // self.tile_w
+    r = event.y // self.tile_height
+    if r >= self.grid_size or c >= self.grid_size:
+        return
+
+#Right click 90 degrees clockwise rotation
 
 #Duncan section
 
