@@ -24,7 +24,20 @@ print("_" * 50)
 
 #Darren section
 
+#Solving the puzzle (tile interactions)
 
+def handle_left_click(self, event):
+    if self.original_cv_image is None or self.is solved:
+        return
+
+#Map coordinates to grid position
+
+    c = event.x // self.tile w
+    r = event.y // self.tile h
+    if r>=self.grid_size or c>=self.grid_size:
+        return
+
+#
 
 #Duncan section
 
