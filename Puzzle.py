@@ -30,33 +30,31 @@ def handle_left_click(self, event):
     if self.original_cv_image is None or self.is_solved:
         return
 
-#Map coordinates to grid position
+    # Map coordinates to grid position
     c = event.x // self.tile_width
     r = event.y // self.tile_height
-    if r>=self.grid_size or c>=self.grid_size:
+    if r >= self.grid_size or c >= self.grid_size:
         return
 
-#Position of tile and left click horizontal flip
-    if event.state & 0x0001:
-        self.grid[r][c].flip_horizontal()
-        self.register_move()
+    # Shift + left click flips the tile; ordinary left click selects/swaps tiles
+    if event.state & 0x0001 and event.num == 1:
+        self.grid[r][c].shift()
         return
 
-#Tile slection and swapping
+    # Tile selection and swapping
     if self.selected_tile_pos is None:
         self.selected_tile_pos = (r, c)
         self.highlight_selected_tile(r, c)
         self.render_displays()
-    else:
-        sr, sc = self.selected_tile_pos
-    if (sr, sc) == (r, c):
+        return
 
-#Deselect tile if same tile clicked again
+    sr, sc = self.selected_tile_pos
+    if (sr, sc) == (r, c):
+        # Deselect tile if same tile clicked again
         self.selected_tile_pos = None
         self.render_displays()
     else:
-
-#Different tile chosen, swap
+        # Different tile chosen, swap
         self.grid[sr][sc], self.grid[r][c] = self.grid[r][c], self.grid[sr][sc]
         self.selected_tile_pos = None
         self.register_move()
@@ -71,6 +69,13 @@ def handle_right_click(self, event):
         return
 
 #Right click 90 degrees clockwise rotation
+    self.grid[r][c].rotate_90_clockwise()
+    self.register_move()
+
+def register_move(self):
+    self.move_count += 1
+    self.update_move_count_display()
+    self.check_if_solved() 
 
 #Duncan section
 
