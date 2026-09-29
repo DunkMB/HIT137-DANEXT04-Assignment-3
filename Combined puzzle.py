@@ -137,19 +137,26 @@ class ImagePuzzleApp:
         # self.puzzle = Puzzle(resized_img, grid_size)
 
 class ImageSplit:
-    import random
-    import cv2
-    import numpy as np
+   class ImageSplit:
 
-    im=cv2.imread("image.jpg")
-    height, width, channels = im.shape
+    def split_image(image, grid_size):
+        rows, cols = grid_size
+        tile_height = image.shape[0] // rows
+        tile_width = image.shape[1] // cols
+        tiles = []
+
+        for r in range(rows):
+            for c in range(cols):
+                tile = image[r * tile_height:(r + 1) * tile_height, c * tile_width:(c + 1) * tile_width]
+                tiles.append(tile)
+
+        return tiles
 
     grid_map = {
         '3x3': (3, 3),
         '4x4': (4, 4),
         '5x5': (5, 5)
     }
-
 
     im = cv2.imread('image.jpg')
     im = cv2.resize(im, (400, 400))
@@ -186,13 +193,24 @@ class ImageSplit:
         return tiles
 
     def apply_transformations(tiles):
-        angle = ImageSplit.angle()
-        transformed_tiles = []
+        transformed_tiles = list(tiles)
+        operations = ('rotate', 'flip', 'swap')
 
-        for tile in tiles:
-            rotated_image = ImageSplit.rotation_sequence(tile, angle)
-            flipped_image = ImageSplit.flip_sequence(rotated_image)
-            transformed_tiles.append(flipped_image)
+        for index in range(len(transformed_tiles)):
+            operation = random.choice(operations)
 
-        columns = ImageSplit.grid_size[1]
-        return ImageSplit.swap_sequence(transformed_tiles, (0, 0), (1, 1), columns)
+            if operation == 'rotate':
+                angle = random.choice((90, 180, 270))
+                transformed_tiles [index] = ImageSplit.rotation_sequence(transformed_tiles[index], angle)
+
+            elif operation == 'flip':
+                flip_axis = random.choice((0, 1))
+                transformed_tiles[index] = ImageSplit.flip_sequence(transformed_tiles[index], flip_axis)
+
+            else:
+                second_index = random.choice([u for u in range(len(transformed_tiles)) if u != index])
+                transformed_tiles[index], transformed_tiles[second_index] = (transformed_tiles[second_index], transformed_tiles[index])
+
+
+        return transformed_tiles
+
