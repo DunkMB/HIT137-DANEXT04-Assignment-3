@@ -63,7 +63,7 @@ def handle_right_click(self, event):
     if self.original_cv_image is None or self.is_solved:
         return
 
-    c = event.x // self.tile_w
+    c = event.x // self.tile_width
     r = event.y // self.tile_height
     if r >= self.grid_size or c >= self.grid_size:
         return
