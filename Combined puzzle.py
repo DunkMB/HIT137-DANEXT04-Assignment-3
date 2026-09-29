@@ -28,7 +28,6 @@ from abc import ABC, abstractmethod
 #Darren section
 
 
-<<<<<<< Updated upstream
 #Solving the puzzle (tile interactions)
 
 def handle_left_click(self, event):
@@ -82,8 +81,6 @@ def register_move(self):
     self.update_move_count_display()
     self.check_if_solved() 
 
-=======
->>>>>>> Stashed changes
 
 #Duncan section
 class ImagePuzzleApp:
