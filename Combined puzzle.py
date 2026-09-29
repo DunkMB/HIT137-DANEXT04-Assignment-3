@@ -136,14 +136,6 @@ class ImagePuzzleApp:
 # This line gets added to the whole code in its proper place. Activate later.
         # self.puzzle = Puzzle(resized_img, grid_size)
 
-<<<<<<< Updated upstream
-=======
-
-
-
-
-#Jonathan section
->>>>>>> Stashed changes
 class ImageSplit:
     import random
     import cv2
