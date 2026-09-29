@@ -28,6 +28,7 @@ from abc import ABC, abstractmethod
 #Darren section
 
 
+<<<<<<< Updated upstream
 #Solving the puzzle (tile interactions)
 
 def handle_left_click(self, event):
@@ -81,6 +82,8 @@ def register_move(self):
     self.update_move_count_display()
     self.check_if_solved() 
 
+=======
+>>>>>>> Stashed changes
 
 #Duncan section
 class ImagePuzzleApp:
@@ -136,3 +139,11 @@ class ImagePuzzleApp:
 # This line gets added to the whole code in its proper place. Activate later.
         # self.puzzle = Puzzle(resized_img, grid_size)
 
+<<<<<<< Updated upstream
+=======
+
+
+
+
+#Jonathan section
+>>>>>>> Stashed changes
