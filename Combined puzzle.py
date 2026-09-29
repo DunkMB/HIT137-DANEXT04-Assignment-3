@@ -147,3 +147,63 @@ class ImagePuzzleApp:
 
 #Jonathan section
 >>>>>>> Stashed changes
+class ImageSplit:
+    import random
+    import cv2
+    import numpy as np
+
+    im=cv2.imread("image.jpg")
+    height, width, channels = im.shape
+
+    grid_map = {
+        '3x3': (3, 3),
+        '4x4': (4, 4),
+        '5x5': (5, 5)
+    }
+
+
+    im = cv2.imread('image.jpg')
+    im = cv2.resize(im, (400, 400))
+    grid_size = random.choice(list(grid_map.values()))
+
+    tiles = []
+    for r in range(grid_size[0]):
+        for c in range(grid_size[1]):
+            tile = im[r * (400 // grid_size[0]):(r + 1) * (400 // grid_size[0]), c * (400 // grid_size[1]):(c + 1) * (400 // grid_size[1])]
+            tiles.append(tile)
+
+    def angle():
+        angle_options = {90: "90°", 180: "180°", 270: "270°"}
+        rotation_angle = random.choice(list(angle_options.keys()))
+        return rotation_angle
+
+    def rotation_sequence(tiles, angle):
+        (h,w) =tiles.shape[:2]
+        center = (w // 2, h // 2)
+        M =cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(tiles, M, (w,h))
+        return rotated
+
+    def flip_sequence(grid):
+        flip_options = [1, 0]
+        flip = random.choice(flip_options)
+        flipped = cv2.flip(grid, flip)
+        return flipped
+
+    def swap_sequence(tiles, pos1, pos2, columns):
+        index1 = pos1[0] * columns + pos1[1]
+        index2 = pos2[0] * columns + pos2[1]
+        tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
+        return tiles
+
+    def apply_transformations(tiles):
+        angle = ImageSplit.angle()
+        transformed_tiles = []
+
+        for tile in tiles:
+            rotated_image = ImageSplit.rotation_sequence(tile, angle)
+            flipped_image = ImageSplit.flip_sequence(rotated_image)
+            transformed_tiles.append(flipped_image)
+
+        columns = ImageSplit.grid_size[1]
+        return ImageSplit.swap_sequence(transformed_tiles, (0, 0), (1, 1), columns)
