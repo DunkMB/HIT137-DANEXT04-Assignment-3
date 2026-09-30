@@ -21,9 +21,8 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageOps, ImageDraw
 
 
-# --- JONATHAN SECTION: IMAGE TRANSFORMATION & PROCESSING ---
+# JONATHAN SECTION: IMAGE TRANSFORMATION & PROCESSING 
 class ImageSplit:
-    @staticmethod
     def split_image(image, grid_size):
         """Splits an image into a list of tiles based on grid_size (rows, cols)."""
         rows, cols = grid_size
@@ -38,7 +37,7 @@ class ImageSplit:
 
         return tiles
 
-    @staticmethod
+    
     def rotation_sequence(tile, angle):
         """Rotates a single image tile by a given angle."""
         (h, w) = tile.shape[:2]
@@ -47,12 +46,12 @@ class ImageSplit:
         rotated = cv2.warpAffine(tile, M, (w, h))
         return rotated
 
-    @staticmethod
+    
     def flip_sequence(tile, flip_axis):
         """Flips a single tile image along horizontal or vertical axis."""
         return cv2.flip(tile, flip_axis)
 
-    @staticmethod
+    
     def swap_sequence(tiles, pos1, pos2, columns):
         """Swaps two tiles given 2D coordinates."""
         index1 = pos1[0] * columns + pos1[1]
@@ -60,7 +59,7 @@ class ImageSplit:
         tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
         return tiles
 
-    @staticmethod
+    
     def apply_transformations(tiles):
         """Applies random transformations (rotate, flip, swap) to a list of tiles."""
         transformed_tiles = list(tiles)
@@ -86,7 +85,7 @@ class ImageSplit:
         return transformed_tiles
 
 
-# --- PUZZLE CORE LOGIC ---
+#  PUZZLE CORE LOGIC 
 class PuzzleTile:
     def __init__(self, tile_id, cv_img):
         self.tile_id = tile_id
@@ -150,7 +149,7 @@ class Puzzle:
             self.grid.append(row)
 
 
-# --- MAIN APPLICATION CLASS (COMBINING DARREN, DUNCAN & AMBER) ---
+#  MAIN APPLICATION CLASS (COMBINING DARREN, DUNCAN & AMBER) 
 class ImagePuzzleApp:
     def __init__(self, root):
         self.root = root
@@ -290,7 +289,7 @@ class ImagePuzzleApp:
             self.buttons_grid.append(row_btns)
             self.solved_buttons_grid.append(solved_row_btns)
 
-    # --- DARREN SECTION & INTEGRATION: USER INPUT LOGIC ---
+    #  DARREN SECTION & INTEGRATION: USER INPUT LOGIC 
     def handle_left_click_event(self, event, r, c):
         if self.original_cv_image is None or self.is_solved:
             return
@@ -331,7 +330,7 @@ class ImagePuzzleApp:
         self.render_displays()
         self.check_if_solved()
 
-    # --- DISPLAY & RENDER LOGIC ---
+    #  DISPLAY & RENDER LOGIC 
     def render_displays(self):
         if not self.puzzle:
             return
@@ -413,30 +412,30 @@ class ImagePuzzleApp:
             messagebox.showinfo("No Hints Left", "You have used all available hints!")
             return
 
-        # Find first incorrect tile
-        found = False
+        # Find ALL incorrect tiles first
+        incorrect_tiles = []
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 curr_tile = self.puzzle.grid[r][c]
                 target_tile = self.puzzle.solved_grid[r][c]
 
                 if curr_tile.tile_id != target_tile.tile_id or curr_tile.rotation != 0 or curr_tile.flipped:
-                    # Locate target solved coordinates
-                    for sr in range(self.grid_size):
-                        for sc in range(self.grid_size):
-                            if self.puzzle.solved_grid[sr][sc].tile_id == curr_tile.tile_id:
-                                self.active_hint = {
-                                    'puzzle_pos': (r, c),
-                                    'solved_pos': (sr, sc)
-                                }
-                                found = True
-                                break
-                        if found:
-                            break
-                if found:
-                    break
+                    incorrect_tiles.append((r, c, curr_tile))
 
-        if found:
+        if incorrect_tiles:
+            # Pick a random incorrect tile from the list
+            r, c, curr_tile = random.choice(incorrect_tiles)
+
+            # Locate target solved coordinates for this tile
+            for sr in range(self.grid_size):
+                for sc in range(self.grid_size):
+                    if self.puzzle.solved_grid[sr][sc].tile_id == curr_tile.tile_id:
+                        self.active_hint = {
+                            'puzzle_pos': (r, c),
+                            'solved_pos': (sr, sc)
+                        }
+                        break
+
             self.hints_used += 1
             self.hint_button.config(text=f"Hint ({self.max_hints - self.hints_used} left)")
             self.render_displays()
