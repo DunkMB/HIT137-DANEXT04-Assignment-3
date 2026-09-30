@@ -1,0 +1,23 @@
+HIT137 - Software Now - Assignment 3
+Group Name: DAN/EXT04
+==================================================
+Group Members:
+Amber Francis                       s403747
+Darren Bragg                        s406821
+Duncan Brown                        s407728
+Jonathan Falkner                    s400817
+
+
+Puzzle.py Instructions
+1	Run the file via VSCode
+2	Select your preferred grid size, either 3x3, 4x4, 5x5, 7x7 or 10x10 by selecting from the drop down Grid menu.
+3	Select your image from a local folder by clicking the Load image button.
+4	Relocate the tiles in the right image by left clicking on them and then the location where you want to place them.
+5	Rotate the tiles by right clicking on them.
+6	Mirror the tiles by Shift-left clicking them.
+7	Once the tile is in the correct location and facing the correct way, a green tick will appear.
+8	If you are stuck with which tile to move, then press the Hint button. You have 3 hints.
+9	If you cannot solve the puzzle, then press the Solve button to see the re-assembled image.
+10	A timer will tell you how long it is taking to solve the puzzle.
+11	To re-try, just select another image.
+12	Enjoy.
