@@ -20,8 +20,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageOps, ImageDraw
 
-
-# JONATHAN SECTION: IMAGE TRANSFORMATION & PROCESSING 
+  
 class ImageSplit:
     def split_image(image, grid_size):
         """Splits an image into a list of tiles based on grid_size (rows, cols)."""
@@ -37,7 +36,7 @@ class ImageSplit:
 
         return tiles
 
-    
+     
     def rotation_sequence(tile, angle):
         """Rotates a single image tile by a given angle."""
         (h, w) = tile.shape[:2]
@@ -46,12 +45,12 @@ class ImageSplit:
         rotated = cv2.warpAffine(tile, M, (w, h))
         return rotated
 
-    
+     
     def flip_sequence(tile, flip_axis):
         """Flips a single tile image along horizontal or vertical axis."""
         return cv2.flip(tile, flip_axis)
 
-    
+     
     def swap_sequence(tiles, pos1, pos2, columns):
         """Swaps two tiles given 2D coordinates."""
         index1 = pos1[0] * columns + pos1[1]
@@ -59,7 +58,7 @@ class ImageSplit:
         tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
         return tiles
 
-    
+     
     def apply_transformations(tiles):
         """Applies random transformations (rotate, flip, swap) to a list of tiles."""
         transformed_tiles = list(tiles)
@@ -84,8 +83,7 @@ class ImageSplit:
 
         return transformed_tiles
 
-
-#  PUZZLE CORE LOGIC 
+ 
 class PuzzleTile:
     def __init__(self, tile_id, cv_img):
         self.tile_id = tile_id
@@ -148,8 +146,7 @@ class Puzzle:
                 row.append(flat_grid[r * self.grid_size + c])
             self.grid.append(row)
 
-
-#  MAIN APPLICATION CLASS (COMBINING DARREN, DUNCAN & AMBER) 
+ 
 class ImagePuzzleApp:
     def __init__(self, root):
         self.root = root
@@ -175,13 +172,13 @@ class ImagePuzzleApp:
         self._build_ui()
 
     def _build_ui(self):
-        # Duncan's control frame
+        # Control frame
         control_frame = ttk.Frame(self.root, padding=10)
         control_frame.pack(fill=tk.X)
 
         ttk.Button(control_frame, text="Load Image", command=self.load_image).pack(side=tk.LEFT, padx=5)
         ttk.Label(control_frame, text="Grid Size:").pack(side=tk.LEFT, padx=5)
-        grid_combobox = ttk.Combobox(control_frame, textvariable=self.grid_size_var, values=[3, 4, 5], state="readonly", width=5)
+        grid_combobox = ttk.Combobox(control_frame, textvariable=self.grid_size_var, values=[3, 4, 5, 7, 10], state="readonly", width=5)
         grid_combobox.pack(side=tk.LEFT, padx=5)
 
         self.hint_button = ttk.Button(control_frame, text=f"Hint ({self.max_hints} left)", command=self.show_hint, state=tk.DISABLED)
@@ -190,7 +187,7 @@ class ImagePuzzleApp:
         self.solve_button = ttk.Button(control_frame, text="Solve", command=self.solve_puzzle, state=tk.DISABLED)
         self.solve_button.pack(side=tk.LEFT, padx=5)
 
-        # Info & Timer Label (Amber)
+        # Info & Timer Label
         self.info_label = tk.Label(self.root, text="Moves: 0 | Time: 0s | Incorrect: 0 | Hints: 0/3", font=("Arial", 12))
         self.info_label.pack(pady=5)
 
@@ -198,11 +195,11 @@ class ImagePuzzleApp:
         self.boards_frame = tk.Frame(self.root)
         self.boards_frame.pack(pady=10)
 
-        # SWAPPED: Solved reference frame on LEFT (column 0)
+        # Solved reference frame on LEFT (column 0)
         self.solved_frame = tk.Frame(self.boards_frame, bd=2, relief=tk.SUNKEN)
         self.solved_frame.grid(row=0, column=0, padx=10)
 
-        # SWAPPED: Puzzle frame on RIGHT (column 1)
+        # Puzzle frame on RIGHT (column 1)
         self.puzzle_frame = tk.Frame(self.boards_frame, bd=2, relief=tk.SUNKEN)
         self.puzzle_frame.grid(row=0, column=1, padx=10)
 
@@ -261,7 +258,6 @@ class ImagePuzzleApp:
         self.render_displays()
 
     def _create_board_buttons(self):
-        # Clear existing buttons
         for widget in self.puzzle_frame.winfo_children():
             widget.destroy()
         for widget in self.solved_frame.winfo_children():
@@ -289,12 +285,11 @@ class ImagePuzzleApp:
             self.buttons_grid.append(row_btns)
             self.solved_buttons_grid.append(solved_row_btns)
 
-    #  DARREN SECTION & INTEGRATION: USER INPUT LOGIC 
     def handle_left_click_event(self, event, r, c):
         if self.original_cv_image is None or self.is_solved:
             return
 
-        # Shift + Left click flips (Darren)
+        # Shift + Left click flips
         if event.state & 0x0001:
             self.puzzle.grid[r][c].shift()
             self.register_move()
@@ -320,7 +315,7 @@ class ImagePuzzleApp:
         if self.original_cv_image is None or self.is_solved:
             return
 
-        # Right-click 90 degrees clockwise rotation (Darren)
+        # Right-click 90 degrees clockwise rotation
         self.puzzle.grid[r][c].rotate_90_clockwise()
         self.register_move()
 
@@ -330,7 +325,6 @@ class ImagePuzzleApp:
         self.render_displays()
         self.check_if_solved()
 
-    #  DISPLAY & RENDER LOGIC 
     def render_displays(self):
         if not self.puzzle:
             return
@@ -339,8 +333,21 @@ class ImagePuzzleApp:
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 tile = self.puzzle.grid[r][c]
+                target_tile = self.puzzle.solved_grid[r][c]
+
                 cv_img = cv2.cvtColor(tile.current_cv_img, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(cv_img)
+
+                # Check if tile is in the correct position & orientation
+                is_correct = (
+                    tile.tile_id == target_tile.tile_id and 
+                    tile.rotation == 0 and 
+                    not tile.flipped
+                )
+
+                # Draw green tick overlay if correct
+                if is_correct:
+                    pil_img = self._draw_green_tick(pil_img)
 
                 # Draw hint if active
                 if self.active_hint and self.active_hint['puzzle_pos'] == (r, c):
@@ -374,8 +381,36 @@ class ImagePuzzleApp:
 
         self.update_move_count_display()
 
+    def _draw_green_tick(self, pil_img):
+        """Draws a semi-transparent green checkmark in the bottom-right corner."""
+        img_copy = pil_img.copy().convert("RGBA")
+        overlay = Image.new("RGBA", img_copy.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        w, h = img_copy.size
+        
+        # Calculate tick points relative to tile size
+        margin = int(w * 0.15)
+        size = int(w * 0.3)
+        
+        # Bottom-right positioning
+        x_offset = w - margin - size
+        y_offset = h - margin - size
+
+        points = [
+            (x_offset, y_offset + int(size * 0.5)),
+            (x_offset + int(size * 0.4), y_offset + size),
+            (x_offset + size, y_offset + int(size * 0.1))
+        ]
+
+        # Draw dark outline for contrast, then lime green checkmark
+        draw.line(points, fill=(0, 0, 0, 200), width=6)
+        draw.line(points, fill=(0, 230, 0, 240), width=4)
+
+        return Image.alpha_composite(img_copy, overlay).convert("RGB")
+
     def _draw_hint_overlay(self, pil_img):
-        """Draws Amber's blue circle hint overlay onto a PIL Image."""
+        """Draws a blue circle hint overlay onto a PIL Image."""
         img_copy = pil_img.copy()
         draw = ImageDraw.Draw(img_copy)
         center_x = img_copy.width // 2
@@ -412,7 +447,6 @@ class ImagePuzzleApp:
             messagebox.showinfo("No Hints Left", "You have used all available hints!")
             return
 
-        # Find ALL incorrect tiles first
         incorrect_tiles = []
         for r in range(self.grid_size):
             for c in range(self.grid_size):
@@ -423,7 +457,7 @@ class ImagePuzzleApp:
                     incorrect_tiles.append((r, c, curr_tile))
 
         if incorrect_tiles:
-            # Pick a random incorrect tile from the list
+            # Randomly pick one incorrect tile to hint
             r, c, curr_tile = random.choice(incorrect_tiles)
 
             # Locate target solved coordinates for this tile
@@ -441,7 +475,7 @@ class ImagePuzzleApp:
             self.render_displays()
 
     def solve_puzzle(self):
-        """Restores grid to the solved state directly (Amber)."""
+        """Restores grid to the solved state directly."""
         self.puzzle.grid = copy.deepcopy(self.puzzle.solved_grid)
         self.active_hint = None
         self.render_displays()
