@@ -101,6 +101,9 @@ class PuzzleTile:
         self.flipped = not self.flipped
         self.current_cv_img = cv2.flip(self.current_cv_img, 1)
 
+    def is_in_original_orientation(self):
+        return np.array_equal(self.current_cv_img, self.original_cv_img)
+
 
 class Puzzle:
     def __init__(self, resized_img, grid_size):
@@ -341,8 +344,7 @@ class ImagePuzzleApp:
                 # Check if tile is in the correct position & orientation
                 is_correct = (
                     tile.tile_id == target_tile.tile_id and 
-                    tile.rotation == 0 and 
-                    not tile.flipped
+                    tile.is_in_original_orientation()
                 )
 
                 # Draw green tick overlay if correct
@@ -429,7 +431,7 @@ class ImagePuzzleApp:
             for c in range(self.grid_size):
                 current = self.puzzle.grid[r][c]
                 target = self.puzzle.solved_grid[r][c]
-                if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
+                if current.tile_id != target.tile_id or not current.is_in_original_orientation():
                     incorrect += 1
 
         elapsed = int(time.time() - self.start_time) if self.running else 0
@@ -453,7 +455,7 @@ class ImagePuzzleApp:
                 curr_tile = self.puzzle.grid[r][c]
                 target_tile = self.puzzle.solved_grid[r][c]
 
-                if curr_tile.tile_id != target_tile.tile_id or curr_tile.rotation != 0 or curr_tile.flipped:
+                if curr_tile.tile_id != target_tile.tile_id or not curr_tile.is_in_original_orientation():
                     incorrect_tiles.append((r, c, curr_tile))
 
         if incorrect_tiles:
@@ -487,7 +489,7 @@ class ImagePuzzleApp:
             for c in range(self.grid_size):
                 current = self.puzzle.grid[r][c]
                 target = self.puzzle.solved_grid[r][c]
-                if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
+                if current.tile_id != target.tile_id or not current.is_in_original_orientation():
                     solved = False
                     break
             if not solved:
