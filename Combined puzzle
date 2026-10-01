@@ -26,8 +26,7 @@ class ImageSplit:
         self.grid_size = None
         self.image = None
 
-    @staticmethod                                               #function to split the image into tiles based on the grid size
-    def split_image(self, image, grid_size):
+    def split_image(self, image, grid_size):                    #function to split the image into tiles based on the grid size
         self.image = image
         self.grid_size = grid_size
         rows, cols = grid_size
@@ -42,7 +41,6 @@ class ImageSplit:
         self.tiles = tiles
         return tiles
 
-    @staticmethod 
     def rotation_sequence(self, tile, angle):                   #function to rotate a tile to a given angle (90, 180, 270 degrees)
         """Rotates a single image tile by a given angle."""
         (h, w) = tile.shape[:2]
@@ -51,19 +49,16 @@ class ImageSplit:
         rotated = cv2.warpAffine(tile, M, (w, h))
         return rotated
 
-    @staticmethod                                               #function to flip a tile either vertically or horizontally
-    def flip_sequence(self, tile, flip_axis):
+    def flip_sequence(self, tile, flip_axis): #function to flip a tile either vertically or horizontally
         return cv2.flip(tile, flip_axis)
 
-    @staticmethod 
     def swap_sequence(self, tiles, pos1, pos2, columns):        # function to swap two tiles on the grid based on their 2D coordinates
         """Swaps two tiles given 2D coordinates."""
         index1 = pos1[0] * columns + pos1[1]
         index2 = pos2[0] * columns + pos2[1]
         tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
         return tiles
-
-    @staticmethod 
+ 
     def apply_transformations(self, tiles):                     #function to apply above specified transformation functions to each tile on the grid
         """Applies random transformations (rotate, flip, swap) to a list of tiles."""
         transformed_tiles = list(tiles)
@@ -178,7 +173,6 @@ class ImagePuzzleApp:
         self._build_ui()
 
     def greeting(self):                                                             #function to display greeting message
-        self.window = tk.Tk()
         self.window.title("DAN/EXT04 - PICTURE PUZZLE SOLVER")
         self.window.geometry('1000 x 1000')
         messagebox.showinfo("Welcome", "Welcome to the DAN/EXT04 Picture Puzzle Solver!", "\n", "The Game's Afoot!")
