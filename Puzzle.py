@@ -17,6 +17,7 @@ import random
 import copy
 import time
 import tkinter as tk
+import winsound
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageOps, ImageDraw
 
@@ -502,10 +503,32 @@ class ImagePuzzleApp:
             self.is_solved = True
             self.running = False
             elapsed = int(time.time() - self.start_time)
-            messagebox.showinfo(
-                "Puzzle Solved",
-                f"Congratulations!\nMoves: {self.move_count}\nTime: {elapsed}s\nHints Used: {self.hints_used}/{self.max_hints}"
-            )
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Puzzle Solved")
+            dialog.transient(self.root)
+            dialog.resizable(False, False)
+            tk.Label(
+                dialog,
+                text=f"Congratulations!\nMoves: {self.move_count}\nTime: {elapsed}s\nHints Used: {self.hints_used}/{self.max_hints}",
+                padx=24,
+                pady=18,
+                justify=tk.CENTER
+            ).pack()
+            ttk.Button(dialog, text="OK", command=dialog.destroy).pack(pady=(0, 12))
+            dialog.bind("<Return>", lambda event: dialog.destroy())
+            dialog.bind("<Escape>", lambda event: dialog.destroy())
+            dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+            dialog.grab_set()
+
+            try:
+                winsound.PlaySound(
+                    r"C:\Windows\Media\tada.wav",
+                    winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
+            except RuntimeError:
+                pass
+
+            dialog.wait_window()
 
 
 if __name__ == "__main__":
