@@ -17,7 +17,10 @@ import random
 import copy
 import time
 import tkinter as tk
-import winsound
+try:
+    import winsound
+except ImportError:
+    winsound = None
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageOps, ImageDraw
 
@@ -520,13 +523,22 @@ class ImagePuzzleApp:
             dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
             dialog.grab_set()
 
-            try:
-                winsound.PlaySound(
-                    r"C:\Windows\Media\tada.wav",
-                    winsound.SND_FILENAME | winsound.SND_ASYNC
-                )
-            except RuntimeError:
-                pass
+            if winsound is None:
+                try:
+                    self.root.bell()
+                except tk.TclError:
+                    pass
+            else:
+                try:
+                    winsound.PlaySound(
+                        r"C:\Windows\Media\tada.wav",
+                        winsound.SND_FILENAME | winsound.SND_ASYNC
+                    )
+                except (OSError, RuntimeError):
+                    try:
+                        self.root.bell()
+                    except tk.TclError:
+                        pass
 
             dialog.wait_window()
 
