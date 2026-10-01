@@ -108,7 +108,8 @@ class Puzzle:
         self.tiles_list = []
         
         # Split image using Jonathan's helper
-        raw_tiles = ImageSplit.split_image(resized_img, (grid_size, grid_size))
+        image_splitter = ImageSplit()
+        raw_tiles = image_splitter.split_image(resized_img, (grid_size, grid_size))
         for idx, t in enumerate(raw_tiles):
             self.tiles_list.append(PuzzleTile(idx + 1, t))
 
