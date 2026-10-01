@@ -362,7 +362,7 @@ class ImagePuzzleApp:
 
                 # Highlight selected tile
                 if self.selected_tile_pos == (r, c):
-                    btn.config(highlightbackground="yellow", highlightcolor="yellow", highlightthickness=3)
+                    btn.config(highlightbackground="#00ff00", highlightcolor="#00ff00", highlightthickness=3)
                 else:
                     btn.config(highlightthickness=0)
 
