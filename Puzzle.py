@@ -16,22 +16,19 @@ import numpy as np
 import random
 import copy
 import time
-import io
-import math
-import struct
-import wave
 import tkinter as tk
-try:
-    import winsound
-except ImportError:
-    winsound = None
 from tkinter import filedialog, messagebox, ttk
-from PIL import Image, ImageTk, ImageOps, ImageDraw
+from PIL import Image, ImageTk, ImageOps, ImageDraw 
 
-  
 class ImageSplit:
-    def split_image(image, grid_size):
-        """Splits an image into a list of tiles based on grid_size (rows, cols)."""
+    def __init__(self):
+        self.tiles = []
+        self.grid_size = None
+        self.image = None
+
+    def split_image(self, image, grid_size):                    #function to split the image into tiles based on the grid size
+        self.image = image
+        self.grid_size = grid_size
         rows, cols = grid_size
         tile_height = image.shape[0] // rows
         tile_width = image.shape[1] // cols
@@ -41,11 +38,10 @@ class ImageSplit:
             for c in range(cols):
                 tile = image[r * tile_height:(r + 1) * tile_height, c * tile_width:(c + 1) * tile_width]
                 tiles.append(tile)
-
+        self.tiles = tiles
         return tiles
 
-     
-    def rotation_sequence(tile, angle):
+    def rotation_sequence(self, tile, angle):                   #function to rotate a tile to a given angle (90, 180, 270 degrees)
         """Rotates a single image tile by a given angle."""
         (h, w) = tile.shape[:2]
         center = (w // 2, h // 2)
@@ -53,21 +49,17 @@ class ImageSplit:
         rotated = cv2.warpAffine(tile, M, (w, h))
         return rotated
 
-     
-    def flip_sequence(tile, flip_axis):
-        """Flips a single tile image along horizontal or vertical axis."""
+    def flip_sequence(self, tile, flip_axis): #function to flip a tile either vertically or horizontally
         return cv2.flip(tile, flip_axis)
 
-     
-    def swap_sequence(tiles, pos1, pos2, columns):
+    def swap_sequence(self, tiles, pos1, pos2, columns):        # function to swap two tiles on the grid based on their 2D coordinates
         """Swaps two tiles given 2D coordinates."""
         index1 = pos1[0] * columns + pos1[1]
         index2 = pos2[0] * columns + pos2[1]
         tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
         return tiles
-
-     
-    def apply_transformations(tiles):
+ 
+    def apply_transformations(self, tiles):                     #function to apply above specified transformation functions to each tile on the grid
         """Applies random transformations (rotate, flip, swap) to a list of tiles."""
         transformed_tiles = list(tiles)
         operations = ('rotate', 'flip', 'swap')
@@ -109,9 +101,6 @@ class PuzzleTile:
         self.flipped = not self.flipped
         self.current_cv_img = cv2.flip(self.current_cv_img, 1)
 
-    def is_in_original_orientation(self):
-        return np.array_equal(self.current_cv_img, self.original_cv_img)
-
 
 class Puzzle:
     def __init__(self, resized_img, grid_size):
@@ -119,7 +108,8 @@ class Puzzle:
         self.tiles_list = []
         
         # Split image using Jonathan's helper
-        raw_tiles = ImageSplit.split_image(resized_img, (grid_size, grid_size))
+        image_splitter = ImageSplit()
+        raw_tiles = image_splitter.split_image(resized_img, (grid_size, grid_size))
         for idx, t in enumerate(raw_tiles):
             self.tiles_list.append(PuzzleTile(idx + 1, t))
 
@@ -159,9 +149,11 @@ class Puzzle:
 
  
 class ImagePuzzleApp:
+    
     def __init__(self, root):
         self.root = root
         self.root.title("DAN/EXT04 - Combined Puzzle Game")
+        self.root.geometry("1000x700")
         
         self.grid_size_var = tk.IntVar(value=3)
         self.original_cv_image = None
@@ -179,7 +171,33 @@ class ImagePuzzleApp:
         self.running = False
         self.is_solved = False
         self.active_hint = None
-        self._correct_tile_positions = set()
+        self.greeting()
+
+    def greeting(self):
+        cover_frame = ttk.Frame(self.root, padding = 40)
+        cover_frame.pack(expand = True)
+        ttk.Label(
+            cover_frame,
+            text = "DAN/EXT04 Picture Puzzle Solver",
+            font = ("Arial", 24, "bold")
+        ).pack(pady=(0, 24))
+        ttk.Label(
+            cover_frame,
+            text = "The Game's Afoot!",
+            font = ("Arial", 14)
+        ).pack(pady=(24, 24))
+        ttk.Button(
+            cover_frame,
+            text = "Start Game",
+            command = self.start_game
+        ).pack()
+
+    def start_game(self):
+        for activation in self.root.winfo_children():
+            activation.destroy()
+
+        self.time_limit = 60
+        self.time_remaining = 60
 
         self._build_ui()
 
@@ -200,7 +218,7 @@ class ImagePuzzleApp:
         self.solve_button.pack(side=tk.LEFT, padx=5)
 
         # Info & Timer Label
-        self.info_label = tk.Label(self.root, text="Moves: 0 | Time: 0s | Incorrect: 0 | Hints: 0/3", font=("Arial", 12))
+        self.info_label = tk.Label(self.root, text="Moves: 0 | Time Left: 01:00 | Incorrect: 0 | Hints: 0/3", font=("Arial", 12))
         self.info_label.pack(pady=5)
 
         # Boards frame
@@ -217,8 +235,6 @@ class ImagePuzzleApp:
 
         self.buttons_grid = []
         self.solved_buttons_grid = []
-
-        self.update_timer()
 
     def load_image(self):
         file_path = filedialog.askopenfilename(
@@ -260,7 +276,10 @@ class ImagePuzzleApp:
         self.hints_used = 0
         self.active_hint = None
         self.is_solved = False
-        self._correct_tile_positions = set()
+
+        # Set up dynamic time limit based on grid size
+        self.time_limit = 60 + (grid_size - 3) * 30
+        self.time_remaining = self.time_limit
         self.start_time = time.time()
         self.running = True
 
@@ -269,6 +288,7 @@ class ImagePuzzleApp:
 
         self._create_board_buttons()
         self.render_displays()
+        self.update_timer()
 
     def _create_board_buttons(self):
         for widget in self.puzzle_frame.winfo_children():
@@ -299,7 +319,7 @@ class ImagePuzzleApp:
             self.solved_buttons_grid.append(solved_row_btns)
 
     def handle_left_click_event(self, event, r, c):
-        if self.original_cv_image is None or self.is_solved:
+        if self.original_cv_image is None or self.is_solved or not self.running:
             return
 
         # Shift + Left click flips
@@ -325,7 +345,7 @@ class ImagePuzzleApp:
             self.register_move()
 
     def handle_right_click_event(self, event, r, c):
-        if self.original_cv_image is None or self.is_solved:
+        if self.original_cv_image is None or self.is_solved or not self.running:
             return
 
         # Right-click 90 degrees clockwise rotation
@@ -335,63 +355,28 @@ class ImagePuzzleApp:
     def register_move(self):
         self.move_count += 1
         self.active_hint = None  # Reset active hint on move
-        correct_positions = self._get_correct_tile_positions()
-        if correct_positions - self._correct_tile_positions:
-            self._play_snap_sound()
         self.render_displays()
         self.check_if_solved()
-
-    def _get_correct_tile_positions(self):
-        return {
-            (r, c)
-            for r in range(self.grid_size)
-            for c in range(self.grid_size)
-            if (
-                self.puzzle.grid[r][c].tile_id == self.puzzle.solved_grid[r][c].tile_id
-                and self.puzzle.grid[r][c].is_in_original_orientation()
-            )
-        }
-
-    def _play_snap_sound(self):
-        if winsound is not None:
-            try:
-                sample_rate = 22050
-                samples = (
-                    int(12000 * math.exp(-sample / 18) * math.sin(2 * math.pi * 1800 * sample / sample_rate))
-                    for sample in range(int(sample_rate * 0.012))
-                )
-                sound = io.BytesIO()
-                with wave.open(sound, "wb") as click:
-                    click.setnchannels(1)
-                    click.setsampwidth(2)
-                    click.setframerate(sample_rate)
-                    click.writeframes(b"".join(struct.pack("<h", sample) for sample in samples))
-                winsound.PlaySound(sound.getvalue(), winsound.SND_MEMORY)
-                return
-            except (OSError, RuntimeError):
-                pass
-
-        try:
-            self.root.bell()
-        except tk.TclError:
-            pass
 
     def render_displays(self):
         if not self.puzzle:
             return
 
-        correct_positions = self._get_correct_tile_positions()
-
         # Render current puzzle grid
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 tile = self.puzzle.grid[r][c]
+                target_tile = self.puzzle.solved_grid[r][c]
 
                 cv_img = cv2.cvtColor(tile.current_cv_img, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(cv_img)
 
                 # Check if tile is in the correct position & orientation
-                is_correct = (r, c) in correct_positions
+                is_correct = (
+                    tile.tile_id == target_tile.tile_id and 
+                    tile.rotation == 0 and 
+                    not tile.flipped
+                )
 
                 # Draw green tick overlay if correct
                 if is_correct:
@@ -401,21 +386,16 @@ class ImagePuzzleApp:
                 if self.active_hint and self.active_hint['puzzle_pos'] == (r, c):
                     pil_img = self._draw_hint_overlay(pil_img)
 
-                if self.selected_tile_pos == (r, c):
-                    draw = ImageDraw.Draw(pil_img)
-                    draw.rectangle(
-                        (0, 0, pil_img.width - 1, pil_img.height - 1),
-                        outline="#ff8c00",
-                        width=4
-                    )
-
                 photo = ImageTk.PhotoImage(pil_img)
                 btn = self.buttons_grid[r][c]
                 btn.config(image=photo)
                 btn.image = photo  # keep reference
-                btn.config(highlightthickness=0)
 
-            self._correct_tile_positions = correct_positions
+                # Highlight selected tile
+                if self.selected_tile_pos == (r, c):
+                    btn.config(highlightbackground="yellow", highlightcolor="yellow", highlightthickness=3)
+                else:
+                    btn.config(highlightthickness=0)
 
         # Render solved reference grid
         for r in range(self.grid_size):
@@ -432,7 +412,7 @@ class ImagePuzzleApp:
                 s_btn.config(image=photo)
                 s_btn.image = photo
 
-        self.update_move_count_display()
+        self.update_timer_display()
 
     def _draw_green_tick(self, pil_img):
         """Draws a semi-transparent green checkmark in the bottom-right corner."""
@@ -441,17 +421,10 @@ class ImagePuzzleApp:
         draw = ImageDraw.Draw(overlay)
 
         w, h = img_copy.size
-
-        border_width = max(2, int(min(w, h) * 0.025))
-        draw.rectangle(
-            (1, 1, w - 2, h - 2),
-            outline=(92, 180, 105, 210),
-            width=border_width
-        )
         
         # Calculate tick points relative to tile size
         margin = int(w * 0.15)
-        size = int(w * 0.2)
+        size = int(w * 0.3)
         
         # Bottom-right positioning
         x_offset = w - margin - size
@@ -464,8 +437,8 @@ class ImagePuzzleApp:
         ]
 
         # Draw dark outline for contrast, then lime green checkmark
-        draw.line(points, fill=(0, 0, 0, 110), width=6)
-        draw.line(points, fill=(0, 230, 0, 135), width=4)
+        draw.line(points, fill=(0, 0, 0, 200), width=6)
+        draw.line(points, fill=(0, 230, 0, 240), width=4)
 
         return Image.alpha_composite(img_copy, overlay).convert("RGB")
 
@@ -483,26 +456,39 @@ class ImagePuzzleApp:
         )
         return img_copy
 
-    def update_move_count_display(self):
-        incorrect = 0
-        for r in range(self.grid_size):
-            for c in range(self.grid_size):
-                current = self.puzzle.grid[r][c]
-                target = self.puzzle.solved_grid[r][c]
-                if current.tile_id != target.tile_id or not current.is_in_original_orientation():
-                    incorrect += 1
-
-        elapsed = int(time.time() - self.start_time) if self.running else 0
-        self.info_label.config(
-            text=f"Moves: {self.move_count} | Time: {elapsed}s | Incorrect: {incorrect} | Hints: {self.hints_used}/{self.max_hints}"
-        )
-
     def update_timer(self):
         if self.running and not self.is_solved:
-            self.update_move_count_display()
-        self.root.after(500, self.update_timer)
+            if self.time_remaining > 0:
+                self.time_remaining -= 1
+                self.update_timer_display()
+                self.root.after(1000, self.update_timer)  # update every 1 second
+            else:
+                self.running = False
+                self.end_game_time_up()
+
+    def update_timer_display(self):
+        incorrect = 0
+        if self.puzzle:
+            for r in range(self.grid_size):
+                for c in range(self.grid_size):
+                    current = self.puzzle.grid[r][c]
+                    target = self.puzzle.solved_grid[r][c]
+                    if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
+                        incorrect += 1
+
+        minutes = self.time_remaining // 60
+        seconds = self.time_remaining % 60
+        self.info_label.config(
+            text=f"Moves: {self.move_count} | Time Left: {minutes:02}:{seconds:02} | Incorrect: {incorrect} | Hints: {self.hints_used}/{self.max_hints}"
+        )
+
+    def end_game_time_up(self):
+        messagebox.showwarning("Time's Up!", "Game Over! You ran out of time.")
 
     def show_hint(self):
+        if not self.running or self.is_solved:
+            return
+
         if self.hints_used >= self.max_hints:
             messagebox.showinfo("No Hints Left", "You have used all available hints!")
             return
@@ -513,7 +499,7 @@ class ImagePuzzleApp:
                 curr_tile = self.puzzle.grid[r][c]
                 target_tile = self.puzzle.solved_grid[r][c]
 
-                if curr_tile.tile_id != target_tile.tile_id or not curr_tile.is_in_original_orientation():
+                if curr_tile.tile_id != target_tile.tile_id or curr_tile.rotation != 0 or curr_tile.flipped:
                     incorrect_tiles.append((r, c, curr_tile))
 
         if incorrect_tiles:
@@ -536,6 +522,8 @@ class ImagePuzzleApp:
 
     def solve_puzzle(self):
         """Restores grid to the solved state directly."""
+        if not self.puzzle:
+            return
         self.puzzle.grid = copy.deepcopy(self.puzzle.solved_grid)
         self.active_hint = None
         self.render_displays()
@@ -547,7 +535,7 @@ class ImagePuzzleApp:
             for c in range(self.grid_size):
                 current = self.puzzle.grid[r][c]
                 target = self.puzzle.solved_grid[r][c]
-                if current.tile_id != target.tile_id or not current.is_in_original_orientation():
+                if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
                     solved = False
                     break
             if not solved:
@@ -556,47 +544,11 @@ class ImagePuzzleApp:
         if solved:
             self.is_solved = True
             self.running = False
-            elapsed = int(time.time() - self.start_time)
-            dialog = tk.Toplevel(self.root)
-            dialog.title("Puzzle Solved")
-            dialog.transient(self.root)
-            dialog.resizable(False, False)
-            tk.Label(
-                dialog,
-                text=f"Congratulations!\nMoves: {self.move_count}\nTime: {elapsed}s\nHints Used: {self.hints_used}/{self.max_hints}",
-                padx=24,
-                pady=18,
-                justify=tk.CENTER
-            ).pack()
-            ttk.Button(dialog, text="OK", command=dialog.destroy).pack(pady=(0, 12))
-            dialog.bind("<Return>", lambda event: dialog.destroy())
-            dialog.bind("<Escape>", lambda event: dialog.destroy())
-            dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
-            self.root.update_idletasks()
-            dialog.update_idletasks()
-            x = self.root.winfo_rootx() + (self.root.winfo_width() - dialog.winfo_width()) // 2
-            y = self.root.winfo_rooty() + (self.root.winfo_height() - dialog.winfo_height()) // 2
-            dialog.geometry(f"+{x}+{y}")
-            dialog.grab_set()
-
-            if winsound is None:
-                try:
-                    self.root.bell()
-                except tk.TclError:
-                    pass
-            else:
-                try:
-                    winsound.PlaySound(
-                        r"C:\Windows\Media\tada.wav",
-                        winsound.SND_FILENAME | winsound.SND_ASYNC
-                    )
-                except (OSError, RuntimeError):
-                    try:
-                        self.root.bell()
-                    except tk.TclError:
-                        pass
-
-            dialog.wait_window()
+            time_taken = self.time_limit - self.time_remaining
+            messagebox.showinfo(
+                "Puzzle Solved",
+                f"Congratulations!\nMoves: {self.move_count}\nTime Taken: {time_taken}s\nHints Used: {self.hints_used}/{self.max_hints}"
+            )
 
 
 if __name__ == "__main__":
