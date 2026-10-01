@@ -355,16 +355,19 @@ class ImagePuzzleApp:
                 if self.active_hint and self.active_hint['puzzle_pos'] == (r, c):
                     pil_img = self._draw_hint_overlay(pil_img)
 
+                if self.selected_tile_pos == (r, c):
+                    draw = ImageDraw.Draw(pil_img)
+                    draw.rectangle(
+                        (0, 0, pil_img.width - 1, pil_img.height - 1),
+                        outline="#ff8c00",
+                        width=4
+                    )
+
                 photo = ImageTk.PhotoImage(pil_img)
                 btn = self.buttons_grid[r][c]
                 btn.config(image=photo)
                 btn.image = photo  # keep reference
-
-                # Highlight selected tile
-                if self.selected_tile_pos == (r, c):
-                    btn.config(highlightbackground="#00ff00", highlightcolor="#00ff00", highlightthickness=3)
-                else:
-                    btn.config(highlightthickness=0)
+                btn.config(highlightthickness=0)
 
         # Render solved reference grid
         for r in range(self.grid_size):
