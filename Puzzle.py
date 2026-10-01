@@ -521,6 +521,11 @@ class ImagePuzzleApp:
             dialog.bind("<Return>", lambda event: dialog.destroy())
             dialog.bind("<Escape>", lambda event: dialog.destroy())
             dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+            self.root.update_idletasks()
+            dialog.update_idletasks()
+            x = self.root.winfo_rootx() + (self.root.winfo_width() - dialog.winfo_width()) // 2
+            y = self.root.winfo_rooty() + (self.root.winfo_height() - dialog.winfo_height()) // 2
+            dialog.geometry(f"+{x}+{y}")
             dialog.grab_set()
 
             if winsound is None:
