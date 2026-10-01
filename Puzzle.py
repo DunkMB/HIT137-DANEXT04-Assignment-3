@@ -413,8 +413,8 @@ class ImagePuzzleApp:
         ]
 
         # Draw dark outline for contrast, then lime green checkmark
-        draw.line(points, fill=(0, 0, 0, 150), width=6)
-        draw.line(points, fill=(0, 230, 0, 200), width=4)
+        draw.line(points, fill=(0, 0, 0, 110), width=6)
+        draw.line(points, fill=(0, 230, 0, 135), width=4)
 
         return Image.alpha_composite(img_copy, overlay).convert("RGB")
 
