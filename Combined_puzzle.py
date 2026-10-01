@@ -101,16 +101,6 @@ class PuzzleTile:
         self.flipped = not self.flipped
         self.current_cv_img = cv2.flip(self.current_cv_img, 1)
 
-class Puzzle:
-    def __init__(self, resized_img, grid_size):
-        self.grid_size = grid_size
-        self.tiles_list = []
-        
-        # Split image using Jonathan's helper
-        image_splitter = ImageSplit()
-        raw_tiles = image_splitter.split_image(resized_img, (grid_size, grid_size))
-        for idx, t in enumerate(raw_tiles):
-            self.tiles_list.append(PuzzleTile(idx + 1, t))
 
 class Puzzle:
     def __init__(self, resized_img, grid_size):
