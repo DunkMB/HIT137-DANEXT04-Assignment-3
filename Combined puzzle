@@ -178,7 +178,7 @@ class ImagePuzzleApp:
         self._build_ui()
 
     def greeting(self):                                                             #function to display greeting message
-        self.window = tk.Tk()
+        # self.window = tk.Tk()
         self.window.title("DAN/EXT04 - PICTURE PUZZLE SOLVER")
         self.window.geometry('1000 x 1000')
         messagebox.showinfo("Welcome", "Welcome to the DAN/EXT04 Picture Puzzle Solver!", "\n", "The Game's Afoot!")
