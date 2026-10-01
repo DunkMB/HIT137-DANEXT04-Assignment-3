@@ -400,7 +400,7 @@ class ImagePuzzleApp:
         
         # Calculate tick points relative to tile size
         margin = int(w * 0.15)
-        size = int(w * 0.3)
+        size = int(w * 0.2)
         
         # Bottom-right positioning
         x_offset = w - margin - size
@@ -413,8 +413,8 @@ class ImagePuzzleApp:
         ]
 
         # Draw dark outline for contrast, then lime green checkmark
-        draw.line(points, fill=(0, 0, 0, 200), width=6)
-        draw.line(points, fill=(0, 230, 0, 240), width=4)
+        draw.line(points, fill=(0, 0, 0, 150), width=6)
+        draw.line(points, fill=(0, 230, 0, 200), width=4)
 
         return Image.alpha_composite(img_copy, overlay).convert("RGB")
 
