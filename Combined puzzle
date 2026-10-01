@@ -153,6 +153,7 @@ class ImagePuzzleApp:
     def __init__(self, root):
         self.root = root
         self.root.title("DAN/EXT04 - Combined Puzzle Game")
+        self.root.geometry("1000x700")
         
         self.grid_size_var = tk.IntVar(value=3)
         self.original_cv_image = None
@@ -170,19 +171,32 @@ class ImagePuzzleApp:
         self.running = False
         self.is_solved = False
         self.active_hint = None
+        self.greeting()
+
+    def greeting(self):
+        cover_frame = ttk.Frame(self.root, padding = 40)
+        cover_frame.pack(expand = True)
+        ttk.Label(
+            cover_frame,
+            text = "DAN/EXT04 Picture Puzzle Solver",
+            font = ("Arial", 24, "bold")
+        ).pack(pady=(0, 24))
+        ttk.Label(
+            cover_frame,
+            text = "The Game's Afoot!",
+            font = ("Arial", 14)
+        ).pack(pady=(24, 24))
+        ttk.Button(
+            cover_frame,
+            text = "Start Game",
+            command = self.start_game
+        ).pack()
+
+    def start_game(self):
+        for activation in self.root.winfo_children():
+            activation.destroy()
 
         self._build_ui()
-
-    def greeting(self):                                                             #function to display greeting message
-        # self.window = tk.Tk()
-        self.window.title("DAN/EXT04 - PICTURE PUZZLE SOLVER")
-        self.window.geometry('1000 x 1000')
-        messagebox.showinfo("Welcome", "Welcome to the DAN/EXT04 Picture Puzzle Solver!", "\n", "The Game's Afoot!")
-                            
-
-    def start_game(self):                                                           #function to start the game and display greeting message
-        button = tk.Button(self.root, text="Start Game", command=self.greeting)
-        button.pack()
 
     def _build_ui(self):
         # Control frame
