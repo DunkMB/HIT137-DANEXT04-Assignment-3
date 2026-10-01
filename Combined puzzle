@@ -18,15 +18,15 @@ import copy
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from PIL import Image, ImageTk, ImageOps, ImageDraw
+from PIL import Image, ImageTk, ImageOps, ImageDraw 
 
-  
 class ImageSplit:
     def __init__(self):
         self.tiles = []
         self.grid_size = None
         self.image = None
 
+    @staticmethod                                               #function to split the image into tiles based on the grid size
     def split_image(self, image, grid_size):
         self.image = image
         self.grid_size = grid_size
@@ -42,8 +42,8 @@ class ImageSplit:
         self.tiles = tiles
         return tiles
 
-     
-    def rotation_sequence(self, tile, angle):
+    @staticmethod 
+    def rotation_sequence(self, tile, angle):                   #function to rotate a tile to a given angle (90, 180, 270 degrees)
         """Rotates a single image tile by a given angle."""
         (h, w) = tile.shape[:2]
         center = (w // 2, h // 2)
@@ -51,21 +51,20 @@ class ImageSplit:
         rotated = cv2.warpAffine(tile, M, (w, h))
         return rotated
 
-     
+    @staticmethod                                               #function to flip a tile either vertically or horizontally
     def flip_sequence(self, tile, flip_axis):
-        """Flips a single tile image along horizontal or vertical axis."""
         return cv2.flip(tile, flip_axis)
 
-     
-    def swap_sequence(self, tiles, pos1, pos2, columns):
+    @staticmethod 
+    def swap_sequence(self, tiles, pos1, pos2, columns):        # function to swap two tiles on the grid based on their 2D coordinates
         """Swaps two tiles given 2D coordinates."""
         index1 = pos1[0] * columns + pos1[1]
         index2 = pos2[0] * columns + pos2[1]
         tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
         return tiles
 
-     
-    def apply_transformations(self, tiles):
+    @staticmethod 
+    def apply_transformations(self, tiles):                     #function to apply above specified transformation functions to each tile on the grid
         """Applies random transformations (rotate, flip, swap) to a list of tiles."""
         transformed_tiles = list(tiles)
         operations = ('rotate', 'flip', 'swap')
@@ -154,6 +153,7 @@ class Puzzle:
 
  
 class ImagePuzzleApp:
+    
     def __init__(self, root):
         self.root = root
         self.root.title("DAN/EXT04 - Combined Puzzle Game")
@@ -176,6 +176,17 @@ class ImagePuzzleApp:
         self.active_hint = None
 
         self._build_ui()
+
+    def greeting(self):                                                             #function to display greeting message
+        self.window = tk.Tk()
+        self.window.title("DAN/EXT04 - PICTURE PUZZLE SOLVER")
+        self.window.geometry('1000 x 1000')
+        messagebox.showinfo("Welcome", "Welcome to the DAN/EXT04 Picture Puzzle Solver!", "\n", "The Game's Afoot!")
+                            
+
+    def start_game(self):                                                           #function to start the game and display greeting message
+        button = tk.Button(self.root, text="Start Game", command=self.greeting)
+        button.pack()
 
     def _build_ui(self):
         # Control frame
