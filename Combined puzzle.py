@@ -18,12 +18,12 @@ import copy
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from PIL import Image, ImageTk, ImageOps, ImageDraw
+from PIL import Image, ImageTk, ImageDraw 
 
-  
+
 class ImageSplit:
-    def split_image(image, grid_size):
-        """Splits an image into a list of tiles based on grid_size (rows, cols)."""
+    def split_image(self, image, grid_size):
+        """Splits the image into tiles based on grid_size (rows, cols)."""
         rows, cols = grid_size
         tile_height = image.shape[0] // rows
         tile_width = image.shape[1] // cols
@@ -33,57 +33,9 @@ class ImageSplit:
             for c in range(cols):
                 tile = image[r * tile_height:(r + 1) * tile_height, c * tile_width:(c + 1) * tile_width]
                 tiles.append(tile)
-
         return tiles
 
-     
-    def rotation_sequence(tile, angle):
-        """Rotates a single image tile by a given angle."""
-        (h, w) = tile.shape[:2]
-        center = (w // 2, h // 2)
-        M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        rotated = cv2.warpAffine(tile, M, (w, h))
-        return rotated
 
-     
-    def flip_sequence(tile, flip_axis):
-        """Flips a single tile image along horizontal or vertical axis."""
-        return cv2.flip(tile, flip_axis)
-
-     
-    def swap_sequence(tiles, pos1, pos2, columns):
-        """Swaps two tiles given 2D coordinates."""
-        index1 = pos1[0] * columns + pos1[1]
-        index2 = pos2[0] * columns + pos2[1]
-        tiles[index1], tiles[index2] = tiles[index2], tiles[index1]
-        return tiles
-
-     
-    def apply_transformations(tiles):
-        """Applies random transformations (rotate, flip, swap) to a list of tiles."""
-        transformed_tiles = list(tiles)
-        operations = ('rotate', 'flip', 'swap')
-
-        for index in range(len(transformed_tiles)):
-            operation = random.choice(operations)
-
-            if operation == 'rotate':
-                angle = random.choice((90, 180, 270))
-                transformed_tiles[index] = ImageSplit.rotation_sequence(transformed_tiles[index], angle)
-
-            elif operation == 'flip':
-                flip_axis = random.choice((0, 1))
-                transformed_tiles[index] = ImageSplit.flip_sequence(transformed_tiles[index], flip_axis)
-
-            else:
-                second_index = random.choice([u for u in range(len(transformed_tiles)) if u != index])
-                transformed_tiles[index], transformed_tiles[second_index] = (
-                    transformed_tiles[second_index], transformed_tiles[index]
-                )
-
-        return transformed_tiles
-
- 
 class PuzzleTile:
     def __init__(self, tile_id, cv_img):
         self.tile_id = tile_id
@@ -105,12 +57,11 @@ class PuzzleTile:
 class Puzzle:
     def __init__(self, resized_img, grid_size):
         self.grid_size = grid_size
-        self.tiles_list = []
         
-        # Split image using Jonathan's helper
-        raw_tiles = ImageSplit.split_image(resized_img, (grid_size, grid_size))
-        for idx, t in enumerate(raw_tiles):
-            self.tiles_list.append(PuzzleTile(idx + 1, t))
+        # Split image into tiles
+        splitter = ImageSplit()
+        raw_tiles = splitter.split_image(resized_img, (grid_size, grid_size))
+        self.tiles_list = [PuzzleTile(idx + 1, t) for idx, t in enumerate(raw_tiles)]
 
         # Store solved grid
         self.solved_grid = []
@@ -120,7 +71,7 @@ class Puzzle:
                 row.append(self.tiles_list[r * grid_size + c])
             self.solved_grid.append(row)
 
-        # Build initial working grid
+        # Build working grid
         self.grid = copy.deepcopy(self.solved_grid)
 
     def scramble(self):
@@ -129,12 +80,10 @@ class Puzzle:
         random.shuffle(flat_grid)
         
         for tile in flat_grid:
-            # Apply random rotation
             rot_times = random.choice([0, 1, 2, 3])
             for _ in range(rot_times):
                 tile.rotate_90_clockwise()
             
-            # Apply random flip
             if random.choice([True, False]):
                 tile.shift()
 
@@ -146,7 +95,7 @@ class Puzzle:
                 row.append(flat_grid[r * self.grid_size + c])
             self.grid.append(row)
 
- 
+
 class ImagePuzzleApp:
     def __init__(self, root):
         self.root = root
@@ -164,15 +113,16 @@ class ImagePuzzleApp:
         self.move_count = 0
         self.hints_used = 0
         self.max_hints = 3
-        self.start_time = None
         self.running = False
         self.is_solved = False
         self.active_hint = None
 
+        self.time_limit = 60
+        self.time_remaining = 60
+
         self._build_ui()
 
     def _build_ui(self):
-        # Control frame
         control_frame = ttk.Frame(self.root, padding=10)
         control_frame.pack(fill=tk.X)
 
@@ -187,26 +137,22 @@ class ImagePuzzleApp:
         self.solve_button = ttk.Button(control_frame, text="Solve", command=self.solve_puzzle, state=tk.DISABLED)
         self.solve_button.pack(side=tk.LEFT, padx=5)
 
-        # Info & Timer Label
-        self.info_label = tk.Label(self.root, text="Moves: 0 | Time: 0s | Incorrect: 0 | Hints: 0/3", font=("Arial", 12))
+        self.info_label = tk.Label(self.root, text="Moves: 0 | Time Left: 01:00 | Incorrect: 0 | Hints: 0/3", font=("Arial", 12))
         self.info_label.pack(pady=5)
 
-        # Boards frame
         self.boards_frame = tk.Frame(self.root)
         self.boards_frame.pack(pady=10)
 
-        # Solved reference frame on LEFT (column 0)
+        # Solved reference frame (LEFT)
         self.solved_frame = tk.Frame(self.boards_frame, bd=2, relief=tk.SUNKEN)
         self.solved_frame.grid(row=0, column=0, padx=10)
 
-        # Puzzle frame on RIGHT (column 1)
+        # Puzzle frame (RIGHT)
         self.puzzle_frame = tk.Frame(self.boards_frame, bd=2, relief=tk.SUNKEN)
         self.puzzle_frame.grid(row=0, column=1, padx=10)
 
         self.buttons_grid = []
         self.solved_buttons_grid = []
-
-        self.update_timer()
 
     def load_image(self):
         file_path = filedialog.askopenfilename(
@@ -248,7 +194,10 @@ class ImagePuzzleApp:
         self.hints_used = 0
         self.active_hint = None
         self.is_solved = False
-        self.start_time = time.time()
+
+        # Set dynamic time limit based on grid size
+        self.time_limit = 60 + (grid_size - 3) * 30
+        self.time_remaining = self.time_limit
         self.running = True
 
         self.hint_button.config(state=tk.NORMAL, text=f"Hint ({self.max_hints - self.hints_used} left)")
@@ -256,6 +205,7 @@ class ImagePuzzleApp:
 
         self._create_board_buttons()
         self.render_displays()
+        self.update_timer()
 
     def _create_board_buttons(self):
         for widget in self.puzzle_frame.winfo_children():
@@ -270,14 +220,12 @@ class ImagePuzzleApp:
             row_btns = []
             solved_row_btns = []
             for c in range(self.grid_size):
-                # Interactive puzzle button
                 btn = tk.Button(self.puzzle_frame, width=self.tile_width, height=self.tile_height)
                 btn.grid(row=r, column=c)
                 btn.bind("<Button-1>", lambda event, arg_r=r, arg_c=c: self.handle_left_click_event(event, arg_r, arg_c))
                 btn.bind("<Button-3>", lambda event, arg_r=r, arg_c=c: self.handle_right_click_event(event, arg_r, arg_c))
                 row_btns.append(btn)
 
-                # Solved reference button
                 s_btn = tk.Button(self.solved_frame, width=self.tile_width, height=self.tile_height)
                 s_btn.grid(row=r, column=c)
                 solved_row_btns.append(s_btn)
@@ -286,16 +234,16 @@ class ImagePuzzleApp:
             self.solved_buttons_grid.append(solved_row_btns)
 
     def handle_left_click_event(self, event, r, c):
-        if self.original_cv_image is None or self.is_solved:
+        if self.original_cv_image is None or self.is_solved or not self.running:
             return
 
-        # Shift + Left click flips
+        # Shift + Left click flips tile
         if event.state & 0x0001:
             self.puzzle.grid[r][c].shift()
             self.register_move()
             return
 
-        # Tile selection & swapping
+        # Selection and swapping
         if self.selected_tile_pos is None:
             self.selected_tile_pos = (r, c)
             self.render_displays()
@@ -306,22 +254,20 @@ class ImagePuzzleApp:
             self.selected_tile_pos = None
             self.render_displays()
         else:
-            # Swap tiles
             self.puzzle.grid[sr][sc], self.puzzle.grid[r][c] = self.puzzle.grid[r][c], self.puzzle.grid[sr][sc]
             self.selected_tile_pos = None
             self.register_move()
 
     def handle_right_click_event(self, event, r, c):
-        if self.original_cv_image is None or self.is_solved:
+        if self.original_cv_image is None or self.is_solved or not self.running:
             return
 
-        # Right-click 90 degrees clockwise rotation
         self.puzzle.grid[r][c].rotate_90_clockwise()
         self.register_move()
 
     def register_move(self):
         self.move_count += 1
-        self.active_hint = None  # Reset active hint on move
+        self.active_hint = None
         self.render_displays()
         self.check_if_solved()
 
@@ -329,7 +275,6 @@ class ImagePuzzleApp:
         if not self.puzzle:
             return
 
-        # Render current puzzle grid
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 tile = self.puzzle.grid[r][c]
@@ -338,33 +283,28 @@ class ImagePuzzleApp:
                 cv_img = cv2.cvtColor(tile.current_cv_img, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(cv_img)
 
-                # Check if tile is in the correct position & orientation
                 is_correct = (
                     tile.tile_id == target_tile.tile_id and 
                     tile.rotation == 0 and 
                     not tile.flipped
                 )
 
-                # Draw green tick overlay if correct
                 if is_correct:
                     pil_img = self._draw_green_tick(pil_img)
 
-                # Draw hint if active
                 if self.active_hint and self.active_hint['puzzle_pos'] == (r, c):
                     pil_img = self._draw_hint_overlay(pil_img)
 
                 photo = ImageTk.PhotoImage(pil_img)
                 btn = self.buttons_grid[r][c]
                 btn.config(image=photo)
-                btn.image = photo  # keep reference
+                btn.image = photo
 
-                # Highlight selected tile
                 if self.selected_tile_pos == (r, c):
                     btn.config(highlightbackground="yellow", highlightcolor="yellow", highlightthickness=3)
                 else:
                     btn.config(highlightthickness=0)
 
-        # Render solved reference grid
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 tile = self.puzzle.solved_grid[r][c]
@@ -379,7 +319,7 @@ class ImagePuzzleApp:
                 s_btn.config(image=photo)
                 s_btn.image = photo
 
-        self.update_move_count_display()
+        self.update_timer_display()
 
     def _draw_green_tick(self, pil_img):
         """Draws a semi-transparent green checkmark in the bottom-right corner."""
@@ -388,12 +328,9 @@ class ImagePuzzleApp:
         draw = ImageDraw.Draw(overlay)
 
         w, h = img_copy.size
-        
-        # Calculate tick points relative to tile size
         margin = int(w * 0.15)
         size = int(w * 0.3)
         
-        # Bottom-right positioning
         x_offset = w - margin - size
         y_offset = h - margin - size
 
@@ -403,7 +340,6 @@ class ImagePuzzleApp:
             (x_offset + size, y_offset + int(size * 0.1))
         ]
 
-        # Draw dark outline for contrast, then lime green checkmark
         draw.line(points, fill=(0, 0, 0, 200), width=6)
         draw.line(points, fill=(0, 230, 0, 240), width=4)
 
@@ -423,26 +359,39 @@ class ImagePuzzleApp:
         )
         return img_copy
 
-    def update_move_count_display(self):
-        incorrect = 0
-        for r in range(self.grid_size):
-            for c in range(self.grid_size):
-                current = self.puzzle.grid[r][c]
-                target = self.puzzle.solved_grid[r][c]
-                if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
-                    incorrect += 1
-
-        elapsed = int(time.time() - self.start_time) if self.running else 0
-        self.info_label.config(
-            text=f"Moves: {self.move_count} | Time: {elapsed}s | Incorrect: {incorrect} | Hints: {self.hints_used}/{self.max_hints}"
-        )
-
     def update_timer(self):
         if self.running and not self.is_solved:
-            self.update_move_count_display()
-        self.root.after(500, self.update_timer)
+            if self.time_remaining > 0:
+                self.time_remaining -= 1
+                self.update_timer_display()
+                self.root.after(1000, self.update_timer)
+            else:
+                self.running = False
+                self.end_game_time_up()
+
+    def update_timer_display(self):
+        incorrect = 0
+        if self.puzzle:
+            for r in range(self.grid_size):
+                for c in range(self.grid_size):
+                    current = self.puzzle.grid[r][c]
+                    target = self.puzzle.solved_grid[r][c]
+                    if current.tile_id != target.tile_id or current.rotation != 0 or current.flipped:
+                        incorrect += 1
+
+        minutes = self.time_remaining // 60
+        seconds = self.time_remaining % 60
+        self.info_label.config(
+            text=f"Moves: {self.move_count} | Time Left: {minutes:02}:{seconds:02} | Incorrect: {incorrect} | Hints: {self.hints_used}/{self.max_hints}"
+        )
+
+    def end_game_time_up(self):
+        messagebox.showwarning("Time's Up!", "Game Over! You ran out of time.")
 
     def show_hint(self):
+        if not self.running or self.is_solved:
+            return
+
         if self.hints_used >= self.max_hints:
             messagebox.showinfo("No Hints Left", "You have used all available hints!")
             return
@@ -457,10 +406,8 @@ class ImagePuzzleApp:
                     incorrect_tiles.append((r, c, curr_tile))
 
         if incorrect_tiles:
-            # Randomly pick one incorrect tile to hint
             r, c, curr_tile = random.choice(incorrect_tiles)
 
-            # Locate target solved coordinates for this tile
             for sr in range(self.grid_size):
                 for sc in range(self.grid_size):
                     if self.puzzle.solved_grid[sr][sc].tile_id == curr_tile.tile_id:
@@ -476,6 +423,8 @@ class ImagePuzzleApp:
 
     def solve_puzzle(self):
         """Restores grid to the solved state directly."""
+        if not self.puzzle:
+            return
         self.puzzle.grid = copy.deepcopy(self.puzzle.solved_grid)
         self.active_hint = None
         self.render_displays()
@@ -496,10 +445,10 @@ class ImagePuzzleApp:
         if solved:
             self.is_solved = True
             self.running = False
-            elapsed = int(time.time() - self.start_time)
+            time_taken = self.time_limit - self.time_remaining
             messagebox.showinfo(
                 "Puzzle Solved",
-                f"Congratulations!\nMoves: {self.move_count}\nTime: {elapsed}s\nHints Used: {self.hints_used}/{self.max_hints}"
+                f"Congratulations!\nMoves: {self.move_count}\nTime Taken: {time_taken}s\nHints Used: {self.hints_used}/{self.max_hints}"
             )
 
 
