@@ -16,6 +16,10 @@ import numpy as np
 import random
 import copy
 import time
+import io
+import math
+import struct
+import wave
 import tkinter as tk
 try:
     import winsound
@@ -175,6 +179,7 @@ class ImagePuzzleApp:
         self.running = False
         self.is_solved = False
         self.active_hint = None
+        self._correct_tile_positions = set()
 
         self._build_ui()
 
@@ -255,6 +260,7 @@ class ImagePuzzleApp:
         self.hints_used = 0
         self.active_hint = None
         self.is_solved = False
+        self._correct_tile_positions = set()
         self.start_time = time.time()
         self.running = True
 
@@ -329,27 +335,63 @@ class ImagePuzzleApp:
     def register_move(self):
         self.move_count += 1
         self.active_hint = None  # Reset active hint on move
+        correct_positions = self._get_correct_tile_positions()
+        if correct_positions - self._correct_tile_positions:
+            self._play_snap_sound()
         self.render_displays()
         self.check_if_solved()
+
+    def _get_correct_tile_positions(self):
+        return {
+            (r, c)
+            for r in range(self.grid_size)
+            for c in range(self.grid_size)
+            if (
+                self.puzzle.grid[r][c].tile_id == self.puzzle.solved_grid[r][c].tile_id
+                and self.puzzle.grid[r][c].is_in_original_orientation()
+            )
+        }
+
+    def _play_snap_sound(self):
+        if winsound is not None:
+            try:
+                sample_rate = 22050
+                samples = (
+                    int(12000 * math.exp(-sample / 18) * math.sin(2 * math.pi * 1800 * sample / sample_rate))
+                    for sample in range(int(sample_rate * 0.012))
+                )
+                sound = io.BytesIO()
+                with wave.open(sound, "wb") as click:
+                    click.setnchannels(1)
+                    click.setsampwidth(2)
+                    click.setframerate(sample_rate)
+                    click.writeframes(b"".join(struct.pack("<h", sample) for sample in samples))
+                winsound.PlaySound(sound.getvalue(), winsound.SND_MEMORY)
+                return
+            except (OSError, RuntimeError):
+                pass
+
+        try:
+            self.root.bell()
+        except tk.TclError:
+            pass
 
     def render_displays(self):
         if not self.puzzle:
             return
 
+        correct_positions = self._get_correct_tile_positions()
+
         # Render current puzzle grid
         for r in range(self.grid_size):
             for c in range(self.grid_size):
                 tile = self.puzzle.grid[r][c]
-                target_tile = self.puzzle.solved_grid[r][c]
 
                 cv_img = cv2.cvtColor(tile.current_cv_img, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(cv_img)
 
                 # Check if tile is in the correct position & orientation
-                is_correct = (
-                    tile.tile_id == target_tile.tile_id and 
-                    tile.is_in_original_orientation()
-                )
+                is_correct = (r, c) in correct_positions
 
                 # Draw green tick overlay if correct
                 if is_correct:
@@ -372,6 +414,8 @@ class ImagePuzzleApp:
                 btn.config(image=photo)
                 btn.image = photo  # keep reference
                 btn.config(highlightthickness=0)
+
+            self._correct_tile_positions = correct_positions
 
         # Render solved reference grid
         for r in range(self.grid_size):
@@ -397,6 +441,13 @@ class ImagePuzzleApp:
         draw = ImageDraw.Draw(overlay)
 
         w, h = img_copy.size
+
+        border_width = max(2, int(min(w, h) * 0.025))
+        draw.rectangle(
+            (1, 1, w - 2, h - 2),
+            outline=(92, 180, 105, 210),
+            width=border_width
+        )
         
         # Calculate tick points relative to tile size
         margin = int(w * 0.15)
